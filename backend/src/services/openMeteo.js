@@ -1,8 +1,8 @@
-const axios = require('axios');
+const axios = require("axios");
 
-const GEO_BASE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
-const FORECAST_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
-const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/search';
+const GEO_BASE_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const FORECAST_BASE_URL = "https://api.open-meteo.com/v1/forecast";
+const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/search";
 
 // Cache simples em memória para reduzir chamadas por lista/painel.
 const forecastCache = new Map(); // key -> { expiresAt, daily }
@@ -18,19 +18,23 @@ async function resolveCoordinatesFromQuery({ name }) {
   const { data } = await axios.get(url, { timeout: 10000 });
   const first = Array.isArray(data?.results) ? data.results[0] : null;
   if (!first) return null;
-  if (typeof first.latitude !== 'number' || typeof first.longitude !== 'number') return null;
-  return { lat: normalizeNumber(first.latitude), lon: normalizeNumber(first.longitude) };
+  if (typeof first.latitude !== "number" || typeof first.longitude !== "number")
+    return null;
+  return {
+    lat: normalizeNumber(first.latitude),
+    lon: normalizeNumber(first.longitude),
+  };
 }
 
 async function resolveCoordinatesFromNominatim({ query }) {
   if (!query || query.length < 2) return null;
   const url =
     `${NOMINATIM_BASE_URL}?q=${encodeURIComponent(query)}` +
-    '&format=json&limit=1&countrycodes=br';
+    "&format=json&limit=1&countrycodes=br";
 
   const { data } = await axios.get(url, {
     timeout: 12000,
-    headers: { 'User-Agent': 'ProjetoFullstack/1.0 (academic project)' },
+    headers: { "User-Agent": "ProjetoFullstack/1.0 (academic project)" },
   });
   const first = Array.isArray(data) ? data[0] : null;
   if (!first) return null;
@@ -41,7 +45,7 @@ async function resolveCoordinatesFromNominatim({ query }) {
 async function getDailyPrecipitationForNextDays(lat, lon, modelName) {
   const latFixed = Number(lat).toFixed(4);
   const lonFixed = Number(lon).toFixed(4);
-  const key = `${latFixed},${lonFixed},${modelName || 'default'},daily`;
+  const key = `${latFixed},${lonFixed},${modelName || "default"},daily`;
 
   const cached = forecastCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.daily;
@@ -49,14 +53,14 @@ async function getDailyPrecipitationForNextDays(lat, lon, modelName) {
   let url =
     `${FORECAST_BASE_URL}?latitude=${encodeURIComponent(latFixed)}` +
     `&longitude=${encodeURIComponent(lonFixed)}` +
-    '&daily=precipitation_probability_max' +
-    '&timezone=America%2FSao_Paulo&forecast_days=14';
+    "&daily=precipitation_probability_max" +
+    "&timezone=America%2FSao_Paulo&forecast_days=14";
   if (modelName) url += `&models=${encodeURIComponent(modelName)}`;
 
-  const { data } = await axios.get(url, { timeout: 15000 });
+  const { data } = await axios.get(url, { timeout: 30000 });
 
   if (!data?.daily?.time) {
-    throw new Error('Falha ao obter dados do clima (Open-Meteo).');
+    throw new Error("Falha ao obter dados do clima (Open-Meteo).");
   }
 
   const daily = {
@@ -70,7 +74,7 @@ async function getDailyPrecipitationForNextDays(lat, lon, modelName) {
 async function getHourlyPrecipitationForNextDays(lat, lon, modelName) {
   const latFixed = Number(lat).toFixed(4);
   const lonFixed = Number(lon).toFixed(4);
-  const key = `${latFixed},${lonFixed},${modelName || 'default'},hourly`;
+  const key = `${latFixed},${lonFixed},${modelName || "default"},hourly`;
 
   const cached = forecastCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.daily;
@@ -78,8 +82,8 @@ async function getHourlyPrecipitationForNextDays(lat, lon, modelName) {
   let url =
     `${FORECAST_BASE_URL}?latitude=${encodeURIComponent(latFixed)}` +
     `&longitude=${encodeURIComponent(lonFixed)}` +
-    '&hourly=precipitation_probability' +
-    '&timezone=America%2FSao_Paulo&forecast_days=14';
+    "&hourly=precipitation_probability" +
+    "&timezone=America%2FSao_Paulo&forecast_days=14";
   if (modelName) url += `&models=${encodeURIComponent(modelName)}`;
 
   const { data } = await axios.get(url, { timeout: 15000 });
@@ -90,12 +94,12 @@ async function getHourlyPrecipitationForNextDays(lat, lon, modelName) {
 
   const byDate = new Map();
   for (let i = 0; i < time.length; i += 1) {
-    const t = String(time[i] || '');
+    const t = String(time[i] || "");
     const day = t.slice(0, 10);
-    const val = typeof pp[i] === 'number' ? pp[i] : null;
+    const val = typeof pp[i] === "number" ? pp[i] : null;
     if (!day || val === null) continue;
     const prev = byDate.get(day);
-    byDate.set(day, typeof prev === 'number' ? Math.max(prev, val) : val);
+    byDate.set(day, typeof prev === "number" ? Math.max(prev, val) : val);
   }
 
   const daily = { byDate };
@@ -103,8 +107,13 @@ async function getHourlyPrecipitationForNextDays(lat, lon, modelName) {
   return daily;
 }
 
-async function getWeatherSnapshotForDate({ lat, lon, dateISO, rainThreshold = 50 }) {
-  const forecastModels = [null, 'gfs_seamless'];
+async function getWeatherSnapshotForDate({
+  lat,
+  lon,
+  dateISO,
+  rainThreshold = 50,
+}) {
+  const forecastModels = [null, "gfs_seamless"];
 
   for (const modelName of forecastModels) {
     try {
@@ -113,17 +122,23 @@ async function getWeatherSnapshotForDate({ lat, lon, dateISO, rainThreshold = 50
       const idx = timeArr.indexOf(dateISO);
       if (idx === -1) continue;
 
-      const precipitationProbabilityMax = daily.precipitationProbabilityMax[idx];
-      const probability = typeof precipitationProbabilityMax === 'number' ? precipitationProbabilityMax : null;
+      const precipitationProbabilityMax =
+        daily.precipitationProbabilityMax[idx];
+      const probability =
+        typeof precipitationProbabilityMax === "number"
+          ? precipitationProbabilityMax
+          : null;
       if (probability === null) continue;
 
-      const status = probability >= rainThreshold ? 'rain' : 'clear';
+      const status = probability >= rainThreshold ? "rain" : "clear";
       return {
         status,
         precipitationProbabilityMax: probability,
         lat,
         lon,
-        source: modelName ? `open-meteo:${modelName}:daily` : 'open-meteo:daily',
+        source: modelName
+          ? `open-meteo:${modelName}:daily`
+          : "open-meteo:daily",
       };
     } catch {
       // tenta próxima estratégia
@@ -133,36 +148,53 @@ async function getWeatherSnapshotForDate({ lat, lon, dateISO, rainThreshold = 50
   // fallback 2: agregado do hourly precipitation_probability
   for (const modelName of forecastModels) {
     try {
-      const hourly = await getHourlyPrecipitationForNextDays(lat, lon, modelName);
+      const hourly = await getHourlyPrecipitationForNextDays(
+        lat,
+        lon,
+        modelName,
+      );
       const probability = hourly.byDate.get(dateISO);
-      if (typeof probability !== 'number') continue;
-      const status = probability >= rainThreshold ? 'rain' : 'clear';
+      if (typeof probability !== "number") continue;
+      const status = probability >= rainThreshold ? "rain" : "clear";
       return {
         status,
         precipitationProbabilityMax: probability,
         lat,
         lon,
-        source: modelName ? `open-meteo:${modelName}:hourly-aggregate` : 'open-meteo:hourly-aggregate',
+        source: modelName
+          ? `open-meteo:${modelName}:hourly-aggregate`
+          : "open-meteo:hourly-aggregate",
       };
     } catch {
       // tenta próxima estratégia
     }
   }
 
-  return { status: 'unknown', precipitationProbabilityMax: null, lat, lon, source: 'weather-fallback:unknown' };
+  return {
+    status: "unknown",
+    precipitationProbabilityMax: null,
+    lat,
+    lon,
+    source: "weather-fallback:unknown",
+  };
 }
 
-async function resolveCoordinatesWithFallback({ localidade, uf, logradouro, cep }) {
+async function resolveCoordinatesWithFallback({
+  localidade,
+  uf,
+  logradouro,
+  cep,
+}) {
   const queries = [
     `${localidade}, ${uf}, Brasil`,
-    `${logradouro || ''}, ${localidade}, ${uf}, Brasil`.replace(/^,\s*/, ''),
-    `${cep || ''}, ${localidade}, ${uf}, Brasil`.replace(/^,\s*/, ''),
+    `${logradouro || ""}, ${localidade}, ${uf}, Brasil`.replace(/^,\s*/, ""),
+    `${cep || ""}, ${localidade}, ${uf}, Brasil`.replace(/^,\s*/, ""),
   ].filter((q) => q && q.length >= 2);
 
   for (const q of queries) {
     try {
       const coords = await resolveCoordinatesFromQuery({ name: q });
-      if (coords) return { ...coords, source: 'open-meteo-geocoding' };
+      if (coords) return { ...coords, source: "open-meteo-geocoding" };
     } catch {
       // tenta próxima
     }
@@ -171,7 +203,7 @@ async function resolveCoordinatesWithFallback({ localidade, uf, logradouro, cep 
   for (const q of queries) {
     try {
       const coords = await resolveCoordinatesFromNominatim({ query: q });
-      if (coords) return { ...coords, source: 'nominatim' };
+      if (coords) return { ...coords, source: "nominatim" };
     } catch {
       // tenta próxima
     }
@@ -184,4 +216,3 @@ module.exports = {
   getWeatherSnapshotForDate,
   resolveCoordinatesWithFallback,
 };
-
