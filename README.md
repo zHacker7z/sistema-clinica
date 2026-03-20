@@ -130,5 +130,5 @@ Aplicação web acadêmica com:
 
 ## Link do projeto
 
-- Frontend: (colocar link Vercel)
-- Backend: (colocar link Render)
+- Frontend: https://sistema-clinica-tau.vercel.app/login
+- Backend: https://sistema-clinica-mm9x.onrender.com
