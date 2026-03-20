@@ -57,7 +57,7 @@ async function getDailyPrecipitationForNextDays(lat, lon, modelName) {
     "&timezone=America%2FSao_Paulo&forecast_days=14";
   if (modelName) url += `&models=${encodeURIComponent(modelName)}`;
 
-  const { data } = await axios.get(url, { timeout: 30000 });
+  const { data } = await axios.get(url, { timeout: 8000 });
 
   if (!data?.daily?.time) {
     throw new Error("Falha ao obter dados do clima (Open-Meteo).");
@@ -191,14 +191,14 @@ async function resolveCoordinatesWithFallback({
     `${cep || ""}, ${localidade}, ${uf}, Brasil`.replace(/^,\s*/, ""),
   ].filter((q) => q && q.length >= 2);
 
-  for (const q of queries) {
-    try {
-      const coords = await resolveCoordinatesFromQuery({ name: q });
-      if (coords) return { ...coords, source: "open-meteo-geocoding" };
-    } catch {
-      // tenta próxima
-    }
-  }
+  const promises = queries.map((q) =>
+    resolveCoordinatesFromQuery({ name: q }).catch(() => null),
+  );
+
+  const results = await Promise.all(promises);
+  const found = results.find(Boolean);
+
+  if (found) return { ...found, source: "open-meteo-geocoding" };
 
   for (const q of queries) {
     try {
