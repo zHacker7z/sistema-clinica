@@ -59,6 +59,7 @@
           <div class="field" style="min-width: 260px">
             <label>Paciente</label>
             <select v-model="selectedPatientId">
+              <option value="">Selecione um paciente</option>
               <option v-for="p in patients" :key="p.id" :value="p.id">
                 {{ p.name }} ({{ p.email }})
               </option>
@@ -477,8 +478,8 @@ async function handleCreate() {
     error.value = "Selecione um horário disponível.";
     return;
   }
-  if (!cepValue || cepValue.length !== 8) {
-    error.value = "Informe um CEP válido com 8 números.";
+  if (!selectedPatientId.value) {
+    error.value = "Selecione um paciente para o agendamento.";
     return;
   }
   submitting.value = true;
