@@ -18,8 +18,12 @@
           />
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap">
-          <button v-if="hasChanges" class="primary" @click="handleSave">Salvar dados</button>
+        <div
+          style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap"
+        >
+          <button v-if="hasChanges" class="primary" @click="handleSave">
+            Salvar dados
+          </button>
           <span v-else class="muted">Dados salvos</span>
         </div>
         <div v-if="error" class="error-box">{{ error }}</div>
@@ -39,20 +43,26 @@
           <div class="skeleton-line"></div>
           <div class="skeleton-line"></div>
         </div>
-        <div v-else-if="appointments.length === 0" class="muted" style="margin-top: 10px">
+        <div
+          v-else-if="appointments.length === 0"
+          class="muted"
+          style="margin-top: 10px"
+        >
           Você ainda não possui atendimentos nessa data.
         </div>
-        <div v-for="a in appointments" :key="a.id" style="padding-top: 10px">
-          <div style="display: flex; justify-content: space-between; gap: 10px">
-            <div>
-              <div style="font-weight: 700">{{ formatTime(a.startAt) }} - {{ formatTime(a.endAt) }}</div>
-              <div class="muted" style="font-size: 13px; margin-top: 4px">
-                {{ a.address.localidade }} - {{ a.address.uf }} | CEP {{ a.address.cep }}
-              </div>
+        <div v-for="a in appointments" :key="a.id" class="appointment-card">
+          <div class="appointment-header">
+            <div class="appointment-time">
+              {{ formatTime(a.startAt) }} - {{ formatTime(a.endAt) }}
             </div>
-            <span class="badge">{{ translateStatus(a.status) }}</span>
+            <span :class="['badge', a.status.toLowerCase()]">{{
+              translateStatus(a.status)
+            }}</span>
           </div>
-          <hr style="border: none; border-top: 1px solid var(--card-border); margin: 12px 0" />
+          <div class="appointment-location muted">
+            {{ a.address.localidade }} - {{ a.address.uf }} | CEP
+            {{ a.address.cep }}
+          </div>
         </div>
       </div>
     </div>
@@ -60,48 +70,55 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
-import { api } from '../services/api.js';
-import { me, updateMe } from '../services/auth.js';
-import { extractErrorMessage } from '../services/errors.js';
+import { computed, onMounted, ref, watch } from "vue";
+import { api } from "../services/api.js";
+import { me, updateMe } from "../services/auth.js";
+import { extractErrorMessage } from "../services/errors.js";
 
-const dateISO = ref(new Date().toLocaleDateString('sv-SE'));
+const dateISO = ref(new Date().toLocaleDateString("sv-SE"));
 const appointments = ref([]);
 const loading = ref(false);
 
-const name = ref('');
-const phone = ref('');
-const error = ref('');
-const initialName = ref('');
-const initialPhone = ref('');
+const name = ref("");
+const phone = ref("");
+const error = ref("");
+const initialName = ref("");
+const initialPhone = ref("");
 
 const hasChanges = computed(() => {
   return (
-    String(name.value || '').trim() !== initialName.value ||
+    String(name.value || "").trim() !== initialName.value ||
     normalizePhone(phone.value) !== initialPhone.value
   );
 });
 
 function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function translateStatus(status) {
-  if (status === 'scheduled') return 'Agendado';
-  if (status === 'completed') return 'Concluído';
-  if (status === 'cancelled') return 'Cancelado';
-  return status || '-';
+  if (status === "scheduled") return "Agendado";
+  if (status === "completed") return "Concluído";
+  if (status === "cancelled") return "Cancelado";
+  return status || "-";
 }
 
 function formatPhone(value) {
-  const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+  const digits = String(value || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 function normalizePhone(value) {
-  return String(value || '').replace(/\D/g, '').slice(0, 11);
+  return String(value || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
 }
 
 function handlePhoneInput(e) {
@@ -110,8 +127,8 @@ function handlePhoneInput(e) {
 
 async function loadMe() {
   const user = await me();
-  const loadedName = String(user?.name || '').trim();
-  const loadedPhone = normalizePhone(user?.phone || '');
+  const loadedName = String(user?.name || "").trim();
+  const loadedPhone = normalizePhone(user?.phone || "");
   name.value = loadedName;
   phone.value = formatPhone(loadedPhone);
   initialName.value = loadedName;
@@ -121,7 +138,9 @@ async function loadMe() {
 async function loadAppointments() {
   loading.value = true;
   try {
-    const { data } = await api.get('/api/appointments', { params: { date: dateISO.value } });
+    const { data } = await api.get("/api/appointments", {
+      params: { date: dateISO.value },
+    });
     appointments.value = data?.items || [];
   } finally {
     loading.value = false;
@@ -129,26 +148,33 @@ async function loadAppointments() {
 }
 
 async function handleSave() {
-  error.value = '';
-  const nameValue = String(name.value || '').trim();
+  error.value = "";
+  const nameValue = String(name.value || "").trim();
   const phoneValue = normalizePhone(phone.value);
   if (nameValue.length < 2) {
-    error.value = 'Informe seu nome com pelo menos 2 caracteres.';
+    error.value = "Informe seu nome com pelo menos 2 caracteres.";
     return;
   }
   if (phoneValue && phoneValue.length < 10) {
-    error.value = 'Telefone inválido. Use DDD + número.';
+    error.value = "Telefone inválido. Use DDD + número.";
     return;
   }
   try {
     const user = await updateMe({ name: nameValue, phone: phoneValue });
     name.value = user.name;
     phone.value = formatPhone(user.phone);
-    initialName.value = String(user.name || '').trim();
+    initialName.value = String(user.name || "").trim();
     initialPhone.value = normalizePhone(user.phone);
-    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Dados atualizados com sucesso.' } }));
+    window.dispatchEvent(
+      new CustomEvent("toast", {
+        detail: { message: "Dados atualizados com sucesso." },
+      }),
+    );
   } catch (e) {
-    error.value = extractErrorMessage(e, 'Não foi possível atualizar seus dados.');
+    error.value = extractErrorMessage(
+      e,
+      "Não foi possível atualizar seus dados.",
+    );
   }
 }
 
@@ -161,4 +187,3 @@ onMounted(async () => {
   await loadAppointments();
 });
 </script>
-

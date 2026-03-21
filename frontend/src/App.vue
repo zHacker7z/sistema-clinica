@@ -3,23 +3,57 @@
     <header class="container" style="padding-top: 18px; padding-bottom: 10px">
       <div class="card app-header">
         <div>
-          <div style="font-weight: 800; display: flex; gap: 8px; align-items: center">
+          <div
+            style="
+              font-weight: 800;
+              display: flex;
+              gap: 8px;
+              align-items: center;
+            "
+          >
             <Stethoscope :size="18" />
             Sistema de Atendimento Inteligente
           </div>
-          <div class="muted" style="font-size: 13px; margin-top: 4px" v-if="user">
-            {{ user.name }} | {{ user.role === 'secretary' ? 'Secretária' : 'Paciente' }}
+          <div
+            class="muted"
+            style="font-size: 13px; margin-top: 4px"
+            v-if="user"
+          >
+            {{ user.name }} |
+            {{ user.role === "secretary" ? "Secretária" : "Paciente" }}
           </div>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end">
-          <button @click="toggleTheme" :title="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'">
+        <div
+          style="
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+          "
+        >
+          <button
+            @click="toggleTheme"
+            :title="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'"
+          >
             <Sun v-if="isDark" :size="16" />
             <Moon v-else :size="16" />
           </button>
-          <router-link v-if="currentRole === 'secretary'" to="/admin">Admin</router-link>
-          <router-link to="/">Agendamentos</router-link>
-          <router-link v-if="isAuthenticated" to="/user">Usuário</router-link>
-          <button v-if="isAuthenticated" class="danger" @click="handleLogout">
+          <router-link
+            v-if="currentRole === 'secretary'"
+            to="/admin"
+            class="nav-btn"
+            >Admin</router-link
+          >
+          <router-link to="/" class="nav-btn">Agendamentos</router-link>
+          <router-link v-if="isAuthenticated" to="/user" class="nav-btn"
+            >Usuário</router-link
+          >
+          <button
+            v-if="isAuthenticated"
+            class="danger nav-btn"
+            @click="handleLogout"
+          >
             <LogOut :size="16" />
           </button>
         </div>
@@ -43,10 +77,16 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { LogOut, Moon, Stethoscope, Sun } from 'lucide-vue-next';
-import { clearToken, getRoleFromToken, getToken, logout, me } from './services/auth.js';
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { LogOut, Moon, Stethoscope, Sun } from "lucide-vue-next";
+import {
+  clearToken,
+  getRoleFromToken,
+  getToken,
+  logout,
+  me,
+} from "./services/auth.js";
 
 const router = useRouter();
 const user = ref(null);
@@ -63,7 +103,7 @@ function pushToast(message) {
 }
 
 function setupToastListener() {
-  window.addEventListener('toast', (e) => {
+  window.addEventListener("toast", (e) => {
     const message = e?.detail?.message;
     if (message) pushToast(message);
   });
@@ -86,13 +126,13 @@ async function handleLogout() {
   await logout();
   clearToken(); // garante
   user.value = null;
-  router.push('/login');
+  router.push("/login");
 }
 
 function applyTheme(dark) {
   isDark.value = Boolean(dark);
-  document.documentElement.classList.toggle('theme-dark', isDark.value);
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
+  document.documentElement.classList.toggle("theme-dark", isDark.value);
+  localStorage.setItem("theme", isDark.value ? "dark" : "light");
 }
 
 function toggleTheme() {
@@ -103,17 +143,16 @@ function handleAuthExpired() {
   user.value = null;
   isAuthenticated.value = false;
   currentRole.value = null;
-  pushToast('Sua sessão expirou. Faça login novamente.');
-  router.push('/login');
+  pushToast("Sua sessão expirou. Faça login novamente.");
+  router.push("/login");
 }
 
 onMounted(() => {
   setupToastListener();
   syncUser();
-  window.addEventListener('auth-changed', syncUser);
-  window.addEventListener('auth-expired', handleAuthExpired);
-  const savedTheme = localStorage.getItem('theme');
-  applyTheme(savedTheme === 'dark');
+  window.addEventListener("auth-changed", syncUser);
+  window.addEventListener("auth-expired", handleAuthExpired);
+  const savedTheme = localStorage.getItem("theme");
+  applyTheme(savedTheme === "dark");
 });
 </script>
-
