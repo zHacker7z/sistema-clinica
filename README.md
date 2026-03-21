@@ -2,8 +2,8 @@
 
 ## 🚀 Demo
 
-🔗 Frontend: https://seu-frontend.vercel.app  
-🔗 Backend: https://seu-backend.onrender.com
+🔗 Frontend: https://sistema-clinica-tau.vercel.app  
+🔗 Backend: https://sistema-clinica-mm9x.onrender.com
 
 ## 🧠 Sobre o projeto
 
